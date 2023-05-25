@@ -22,6 +22,7 @@ import static org.springframework.security.config.Customizer.withDefaults;
 //extends WebSecurityConfigurerAdapter Наследуемся. В дальнешем обновить
 @Configuration
 @EnableWebSecurity
+//ДЛя работы PreAuthorize - ограничения к коду
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
@@ -51,13 +52,25 @@ public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception 
         http
                 .authorizeRequests()
                 .requestMatchers("/auth/login","/auth/registration", "/error").permitAll()
+                //Все остальные запросы не пускаем
+                // .anyRequest().authenticated()
+                //На все остальные страницы пускаем ROLE_USER и ROLE_ADMIN
                 .anyRequest().hasAnyRole("USER","ADMIN")
+                //После настроек доступа возвращаемя к настройке страницы для авторизации
                 .and()
+                //formLogin().loginPage("/auth/login") - говорим, что у нас собственная форма аутентификации.
                 .formLogin().loginPage("/auth/login")
+                //loginProcessingUrl("/process_login") - саму форму process_login мы не реализуем.
                 .loginProcessingUrl("/process_login")
+                //.defaultSuccessUrl("/hello",true);- после успешной авторизации перенаправить на страницу hello, true - без этого иногда не перенаправляет
                 .defaultSuccessUrl("/hello", true)
+                //.failureUrl("/auth/login?error"); -  при ошибке авторизации перенаправлять на /auth/login и
+                //передавать в параметры ошибку
                 .failureUrl("/auth/login?error")
+                //Добавляем разлогирование
                 .and()
+                //если человек перешел на страницу /logout, то он разлогинится
+                //Реализовывать саму страницу logout не нужно, Spring Security поймает обращение сам
                 .logout().logoutUrl("/logout").logoutSuccessUrl("/auth/login");
         return http.build();
     }
